@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alivai AI - Complete AI Solutions</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM CDNs -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        <!-- Chosen Palette: Warm Neutrals with Indigo and Accent Colors -->
+        <!-- Application Structure Plan: The SPA is structured as a single-page application with a fixed sidebar navigation and a dynamic main content area. This structure was chosen to provide intuitive, fast navigation between different AI tools and informational sections, mimicking a dashboard experience. Users can select tools from the sidebar, and the main content area updates dynamically without page reloads, facilitating easy exploration and task-oriented interaction. The home dashboard provides quick access and highlights key features and the admin control. -->
+        <!-- Visualization & Content Choices:
+            1. Textual Content (About sections, Policies, FAQ): Goal -> Inform. Presentation -> Direct text blocks. Interaction -> Navigation via sidebar. Justification -> Clear, concise delivery of information; avoids clutter. Library/Method -> Standard HTML paragraphs/lists, dynamically shown/hidden by JS.
+            2. AI Tools (Text Gen, SEO Query, Image Art, etc.): Goal -> Task Execution & Information Generation. Presentation -> Input fields, buttons, output display areas. Interaction -> User input, button clicks for API calls, dynamic text/image output. Justification -> Direct interaction for content creation. Library/Method -> HTML forms, vanilla JS for API calls (Gemini for text, Imagen for images).
+            3. Admin Mode/Feature Locks: Goal -> Access Control & Information (for Alivai). Presentation -> Conditional UI elements, informative alert messages. Interaction -> Button toggle for Admin Mode, conditional rendering of locked features. Justification -> Demonstrates owner control and feature management. Library/Method -> React state management and conditional rendering.
+            CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+        -->
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .prose {
+            max-width: none;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        /* Chart Container Styling (No charts are generated for this specific report content, but styles are included for compliance) */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px; /* Example max-width for charts */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Base height for chart, adjust responsiveness as needed */
+            max-height: 450px; /* Max height to prevent excessive vertical space */
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px; /* Smaller height on mobile */
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+
+        // Main App component
+        const App = () => {
+            const [textPrompt, setTextPrompt] = useState('');
+            const [generatedText, setGeneratedText] = useState('');
+
+            const [seoKeyword, setSeoKeyword] = useState('');
+            const [generatedSeoQueries, setGeneratedSeoQueries] = useState('');
+
+            const [keywordIdeaSeed, setKeywordIdeaSeed] = useState('');
+            const [generatedKeywordIdeas, setGeneratedKeywordIdeas] = useState('');
+            const [outlineTopic, setOutlineTopic] = useState('');
+            const [generatedContentOutline, setGeneratedContentOutline] = useState('');
+
+            const [paragraphPrompt, setParagraphPrompt] = useState('');
+            const [generatedParagraph, setGeneratedParagraph] = useState('');
+
+            const [blogIdeaKeyword, setBlogIdeaKeyword] = useState('');
+            const [generatedBlogIdeas, setGeneratedBlogIdeas] = useState('');
+
+            const [headlineTopic, setHeadlineTopic] = useState('');
+            const [generatedHeadline, setGeneratedHeadline] = useState('');
+
+            const [productDescriptionDetails, setProductDescriptionDetails] = useState('');
+            const [generatedProductDescription, setGeneratedProductDescription] = useState('');
+
+            const [socialMediaPostTopic, setSocialMediaPostTopic] = useState('');
+            const [generatedSocialMediaPost, setGeneratedSocialMediaPost] = useState('');
+
+            const [imagePrompt, setImagePrompt] = useState('');
+            const [generatedImageUrl, setGeneratedImageUrl] = useState('');
+            const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
+            const [metaDescriptionTopic, setMetaDescriptionTopic] = useState('');
+            const [generatedMetaDescription, setGeneratedMetaDescription] = useState('');
+
+            const [feedbackText, setFeedbackText] = useState('');
+            const [feedbackMessage, setFeedbackMessage] = useState('');
+
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [currentPage, setCurrentPage] = useState('home-dashboard');
+            const [selectedLanguage, setSelectedLanguage] = useState('en');
+
+            const [isAdminMode, setIsAdminMode] = useState(false);
+            const [arePublicFeaturesUnlocked, setArePublicFeaturesUnlocked] = useState(false);
+
+            const callGeminiApi = async (userPrompt, setOutputState, setErrorState = setError) => {
+                setErrorState('');
+                setOutputState('');
+                setIsLoading(true);
+
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: userPrompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        setOutputState(text);
+                    } else {
+                        setErrorState('Failed to generate content. Please try again.');
+                    }
+                } catch (err) {
+                    setErrorState('An error occurred: ' + err.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleGenerateText = () => {
+                if (!textPrompt.trim()) {
+                    setError('Please enter a prompt before generating text.');
+                    return;
+                }
+                callGeminiApi(textPrompt, setGeneratedText);
+            };
+
+            const handleGenerateSeoQueries = () => {
+                if (!seoKeyword.trim()) {
+                    setError('Please enter a target keyword before generating SEO queries.');
+                    return;
+                }
+                const seoPrompt = `Generate 10-15 relevant SEO-friendly questions and related queries for the target keyword: "${seoKeyword}". Format them as a bulleted list.`;
+                callGeminiApi(seoPrompt, setGeneratedSeoQueries);
+            };
+
+            const handleGenerateKeywordIdeas = () => {
+                if (!keywordIdeaSeed.trim()) {
+                    setError('Please enter a seed keyword before generating ideas.');
+                    return;
+                }
+                const keywordPrompt = `Generate 15-20 relevant keyword ideas (including short-tail, long-tail, and LSI keywords) for the seed keyword: "${keywordIdeaSeed}". Format them as a bulleted list.`;
+                callGeminiApi(keywordPrompt, setGeneratedKeywordIdeas);
+            };
+
+            const handleGenerateContentOutline = () => {
+                if (!outlineTopic.trim()) {
+                    setError('Please enter a topic before generating an outline.');
+                    return;
+                }
+                const outlinePrompt = `Generate a detailed, SEO-friendly content outline for the topic: "${outlineTopic}". Include a catchy title, a brief introduction idea, 3-5 main headings (H2s), 2-3 subheadings (H3s) for each main heading, and a conclusion idea. Use a hierarchical list format.`;
+                callGeminiApi(outlinePrompt, setGeneratedContentOutline);
+            };
+
+            const handleGenerateParagraph = () => {
+                if (!paragraphPrompt.trim()) {
+                    setError('Please enter a prompt to generate a paragraph.');
+                    return;
+                }
+                const prompt = `Generate a paragraph about: "${paragraphPrompt}"`;
+                callGeminiApi(prompt, setGeneratedParagraph);
+            };
+
+            const handleGenerateBlogIdea = () => {
+                if (!blogIdeaKeyword.trim()) {
+                    setError('Please enter a keyword to generate blog ideas.');
+                    return;
+                }
+                const prompt = `Generate 5 unique blog post ideas for the keyword: "${blogIdeaKeyword}". Provide a short title and a brief description for each.`;
+                callGeminiApi(prompt, setGeneratedBlogIdeas);
+            };
+
+            const handleGenerateWebsiteHeadline = () => {
+                if (!headlineTopic.trim()) {
+                    setError('Please enter a topic/product to generate a website headline.');
+                    return;
+                }
+                const prompt = `Generate 5 catchy and SEO-friendly website headlines for: "${headlineTopic}".`;
+                callGeminiApi(prompt, setGeneratedHeadline);
+            };
+
+            const handleGenerateProductDescription = () => {
+                if (!productDescriptionDetails.trim()) {
+                    setError('Please enter product details to generate a description.');
+                    return;
+                }
+                const prompt = `Write a compelling product description based on these details: "${productDescriptionDetails}". Highlight benefits and key features.`;
+                callGeminiApi(prompt, setGeneratedProductDescription);
+            };
+
+            const handleGenerateSocialMediaPost = () => {
+                if (!socialMediaPostTopic.trim()) {
+                    setError('Please enter a topic for the social media post.');
+                    return;
+                }
+                const prompt = `Write a short and engaging social media post (e.g., for Twitter/Facebook) about: "${socialMediaPostTopic}". Include relevant emojis if appropriate.`;
+                callGeminiApi(prompt, setGeneratedSocialMediaPost);
+            };
+
+            const handleGenerateMetaDescription = () => {
+                if (!metaDescriptionTopic.trim()) {
+                    setError('Please enter a topic/content summary to generate a meta description.');
+                    return;
+                }
+                const prompt = `Generate an SEO-friendly meta description (under 160 characters) for a page about: "${metaDescriptionTopic}". Make it concise and compelling.`;
+                callGeminiApi(prompt, setGeneratedMetaDescription);
+            };
+
+            const handleGenerateImage = async () => {
+                setError('');
+                setGeneratedImageUrl('');
+                if (!imagePrompt.trim()) {
+                    setError('Please enter a prompt for the image.');
+                    return;
+                }
+
+                setIsGeneratingImage(true);
+                try {
+                    const payload = { instances: { prompt: imagePrompt }, parameters: { "sampleCount": 1 } };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                        setGeneratedImageUrl(imageUrl);
+                    } else {
+                        setError('Failed to generate image. Please try again.');
+                    }
+                } catch (err) {
+                    setError('An error occurred during image generation: ' + err.message);
+                } finally {
+                    setIsGeneratingImage(false);
+                }
+            };
+
+            const handleSubmitFeedback = (e) => {
+                e.preventDefault();
+                if (feedbackText.trim()) {
+                    console.log("Feedback submitted:", feedbackText);
+                    setFeedbackMessage("Thank you for your feedback! It has been submitted.");
+                    setFeedbackText('');
+                } else {
+                    setFeedbackMessage("Please enter your feedback before submitting.");
+                }
+            };
+
+            const renderLoadingSpinner = () => (
+                <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                </span>
+            );
+
+            const navigateToPage = (pageName, requiresAdmin = false, requiresPublicUnlock = false) => {
+                if (requiresAdmin && !isAdminMode) {
+                    setError("Access Denied: You need administrator privileges to access this section.");
+                    return;
+                }
+                if (requiresPublicUnlock && !arePublicFeaturesUnlocked) {
+                    setError("Feature Locked: This feature is currently locked. Please contact the administrator.");
+                    return;
+                }
+                setError('');
+                setCurrentPage(pageName);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 font-sans text-gray-800 flex flex-col md:flex-row">
+                    <aside className="w-full md:w-64 bg-white p-6 shadow-xl rounded-lg md:rounded-l-lg md:rounded-r-none flex-shrink-0 mb-6 md:mb-0">
+                        <div className="flex items-center mb-8">
+                            <svg className="w-8 h-8 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                            <h1 className="text-2xl font-bold text-gray-900">Alivai AI</h1>
+                        </div>
+                        <nav>
+                            <ul>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('home-dashboard')} className={`flex items-center py-2 px-4 ${currentPage === 'home-dashboard' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2 2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                                        Home
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('text-generator')} className={`flex items-center py-2 px-4 ${currentPage === 'text-generator' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                        Text Generator
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('paragraph-generator')} className={`flex items-center py-2 px-4 ${currentPage === 'paragraph-generator' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        Paragraph Generator
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('blog-idea-generator')} className={`flex items-center py-2 px-4 ${currentPage === 'blog-idea-generator' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.206 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.794 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.794 5 16.5 5c1.706 0 3.332.477 4.5 1.253v13C19.832 18.477 18.206 18 16.5 18c-1.706 0-3.332.477-4.5 1.253"></path></svg>
+                                        Blog Idea Generator
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('website-headline-generator')} className={`flex items-center py-2 px-4 ${currentPage === 'website-headline-generator' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 0l2.5 2.5L10 21m-4 0h6m-3-3l3 3"></path></svg>
+                                        Website Headlines
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('product-description-generator')} className={`flex items-center py-2 px-4 ${currentPage === 'product-description-generator' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                                        Product Descriptions
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('social-media-post-generator')} className={`flex items-center py-2 px-4 ${currentPage === 'social-media-post-generator' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                                        Social Media Posts
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('ai-image-art', false, true)} className={`flex items-center py-2 px-4 ${currentPage === 'ai-image-art' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200 ${!arePublicFeaturesUnlocked ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        AI Image Art {!arePublicFeaturesUnlocked && '(Locked)'}
+                                    </a>
+                                </li>
+                                <li className="my-4 border-t border-gray-200"></li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('seo-query-generator')} className={`flex items-center py-2 px-4 ${currentPage === 'seo-query-generator' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                        SEO Query Generator
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('seo-dashboard', false, true)} className={`flex items-center py-2 px-4 ${currentPage === 'seo-dashboard' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200 ${!arePublicFeaturesUnlocked ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                        SEO Dashboard {!arePublicFeaturesUnlocked && '(Locked)'}
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('seo-meta-description')} className={`flex items-center py-2 px-4 ${currentPage === 'seo-meta-description' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h10m-9 4h4M9 10V7a2 2 0 012-2h2a2 2 0 012 2v3m-2-3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        SEO Meta Description
+                                    </a>
+                                </li>
+                                <li className="my-4 border-t border-gray-200"></li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('about')} className={`flex items-center py-2 px-4 ${currentPage === 'about' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        About Alivai AI
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('about-me-section')} className={`flex items-center py-2 px-4 ${currentPage === 'about-me-section' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                        About Me
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('disclaimer-policy')} className={`flex items-center py-2 px-4 ${currentPage === 'disclaimer-policy' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        Disclaimer Policy
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('privacy-policy')} className={`flex items-center py-2 px-4 ${currentPage === 'privacy-policy' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                        Privacy Policy
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('cookies-policy')} className={`flex items-center py-2 px-4 ${currentPage === 'cookies-policy' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                        Cookies Policy
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('copyright-policy')} className={`flex items-center py-2 px-4 ${currentPage === 'copyright-policy' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        Copyright & Fair Use
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('faq-section')} className={`flex items-center py-2 px-4 ${currentPage === 'faq-section' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9.228a4.5 4.5 0 110 6.364M15.712 14.712a4.5 4.5 0 110-6.364M9.5 20h5M12 21a9 9 0 100-18 9 9 0 000 18z"></path></svg>
+                                        FAQ
+                                    </a>
+                                </li>
+                                <li className="my-4 border-t border-gray-200"></li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('feedback')} className={`flex items-center py-2 px-4 ${currentPage === 'feedback' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h10m-9 4h4M9 10V7a2 2 0 012-2h2a2 2 0 012 2v3m-2-3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Feedback
+                                    </a>
+                                </li>
+                                <li className="mb-2">
+                                    <a href="#" onClick={() => navigateToPage('settings', true)} className={`flex items-center py-2 px-4 ${currentPage === 'settings' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-700 hover:bg-gray-50'} rounded-lg font-medium transition duration-200 ${!isAdminMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        Settings {!isAdminMode && '(Admin Locked)'}
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </aside>
+
+                    <main className="flex-1 p-8 overflow-y-auto">
+                        {error && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                <strong className="font-bold">Error!</strong>
+                                <span className="block sm:inline ml-2">{error}</span>
+                            </div>
+                        )}
+
+                        {currentPage === 'home-dashboard' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6">Welcome to Alivai AI!</h2>
+                                <p className="text-gray-600 mb-6">
+                                    This is your central hub for all AI-powered content generation and SEO tools. Select an option from the sidebar to get started.
+                                </p>
+
+                                {!isAdminMode && (
+                                    <div className="mb-8 p-6 bg-yellow-50 border border-yellow-200 rounded-lg shadow-sm">
+                                        <h3 className="text-xl font-semibold text-yellow-800 mb-3">Admin Access</h3>
+                                        <p className="text-gray-700 mb-4">
+                                            To access administrative features like **Settings** and unlock certain public tools (e.g., AI Image Art, SEO Dashboard), please activate Admin Mode.
+                                        </p>
+                                        <button
+                                            onClick={() => setIsAdminMode(true)}
+                                            className="px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition duration-300 transform hover:scale-105"
+                                        >
+                                            Activate Admin Mode (Alivai Only)
+                                        </button>
+                                        <p className="text-sm text-gray-500 mt-2">
+                                            (This is for demonstration. In a real app, this would be a secure login.)
+                                        </p>
+                                    </div>
+                                )}
+                                {isAdminMode && (
+                                    <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+                                        <h3 className="text-xl font-semibold text-green-800 mb-3">Admin Mode Active!</h3>
+                                        <p className="text-gray-700">
+                                            You now have access to the **Settings** section. From there, you can unlock public features like **AI Image Art** and the **SEO Dashboard**.
+                                        </p>
+                                        <button
+                                            onClick={() => setIsAdminMode(false)}
+                                            className="mt-4 px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition duration-300"
+                                        >
+                                            Deactivate Admin Mode
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="bg-indigo-50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                                        <h3 className="text-xl font-semibold text-indigo-700 mb-2">Content Creation</h3>
+                                        <p className="text-gray-700">Generate articles, paragraphs, headlines, and more.</p>
+                                        <button onClick={() => navigateToPage('text-generator')} className="mt-4 text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
+                                            Start Writing <span className="ml-1">&rarr;</span>
+                                        </button>
+                                    </div>
+                                    <div className={`p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ${!arePublicFeaturesUnlocked ? 'bg-gray-200 text-gray-500 opacity-70 cursor-not-allowed' : 'bg-green-50 text-green-700'}`}>
+                                        <h3 className="text-xl font-semibold mb-2">SEO Tools</h3>
+                                        <p className="text-gray-700">Optimize your content with keyword research and meta descriptions.</p>
+                                        <button onClick={() => navigateToPage('seo-dashboard', false, true)} disabled={!arePublicFeaturesUnlocked} className={`mt-4 font-medium flex items-center ${!arePublicFeaturesUnlocked ? 'text-gray-500' : 'text-green-600 hover:text-green-800'}`}>
+                                            Boost SEO {!arePublicFeaturesUnlocked && '(Locked)'} <span className="ml-1">&rarr;</span>
+                                        </button>
+                                    </div>
+                                    <div className={`p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ${!arePublicFeaturesUnlocked ? 'bg-gray-200 text-gray-500 opacity-70 cursor-not-allowed' : 'bg-red-50 text-red-700'}`}>
+                                        <h3 className="text-xl font-semibold mb-2">Image Generation</h3>
+                                        <p className="text-gray-700">Create unique AI-generated images from text.</p>
+                                        <button onClick={() => navigateToPage('ai-image-art', false, true)} disabled={!arePublicFeaturesUnlocked} className={`mt-4 font-medium flex items-center ${!arePublicFeaturesUnlocked ? 'text-gray-500' : 'text-red-600 hover:text-red-800'}`}>
+                                            Generate Images {!arePublicFeaturesUnlocked && '(Locked)'} <span className="ml-1">&rarr;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentPage === 'text-generator' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Text Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Enter your prompt below to generate high-quality text using AI.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="text-prompt" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Your Prompt
+                                    </label>
+                                    <textarea
+                                        id="text-prompt"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200 resize-y min-h-[120px]"
+                                        rows="5"
+                                        placeholder="e.g., Write a blog post about the benefits of remote work."
+                                        value={textPrompt}
+                                        onChange={(e) => setTextPrompt(e.target.value)}
+                                    ></textarea>
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateText}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate Text'}
+                                </button>
+                                {generatedText && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Text</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedText}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'paragraph-generator' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Paragraph Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Provide a topic or prompt to generate a well-structured paragraph.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="paragraph-prompt" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Paragraph Topic/Prompt
+                                    </label>
+                                    <textarea
+                                        id="paragraph-prompt"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200 resize-y min-h-[100px]"
+                                        rows="4"
+                                        placeholder="e.g., Explain the concept of photosynthesis briefly."
+                                        value={paragraphPrompt}
+                                        onChange={(e) => setParagraphPrompt(e.target.value)}
+                                    ></textarea>
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateParagraph}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate Paragraph'}
+                                </button>
+                                {generatedParagraph && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Paragraph</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedParagraph}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'blog-idea-generator' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Blog Idea Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Enter a keyword or topic to get fresh blog post ideas.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="blog-idea-keyword" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Keyword/Topic
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="blog-idea-keyword"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                        placeholder="e.g., 'healthy eating on a budget'"
+                                        value={blogIdeaKeyword}
+                                        onChange={(e) => setBlogIdeaKeyword(e.target.value)}
+                                    />
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateBlogIdea}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate Blog Ideas'}
+                                </button>
+                                {generatedBlogIdeas && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Blog Ideas</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedBlogIdeas}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'website-headline-generator' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Website Headline Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Generate compelling headlines for your website pages or sections.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="headline-topic" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Topic/Product/Service
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="headline-topic"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                        placeholder="e.g., 'premium online courses' or 'eco-friendly cleaning'"
+                                        value={headlineTopic}
+                                        onChange={(e) => setHeadlineTopic(e.target.value)}
+                                    />
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateWebsiteHeadline}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate Headlines'}
+                                </button>
+                                {generatedHeadline && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Headlines</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedHeadline}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'product-description-generator' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Product Description Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Generate compelling and detailed descriptions for your products.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="product-details" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Product Name and Key Features/Benefits
+                                    </label>
+                                    <textarea
+                                        id="product-details"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200 resize-y min-h-[120px]"
+                                        rows="5"
+                                        placeholder="e.g., 'Eco-Friendly Yoga Mat: Non-slip, sustainable, made from natural rubber, perfect for all levels, promotes balance.'"
+                                        value={productDescriptionDetails}
+                                        onChange={(e) => setProductDescriptionDetails(e.target.value)}
+                                    ></textarea>
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateProductDescription}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate Description'}
+                                </button>
+                                {generatedProductDescription && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Product Description</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedProductDescription}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'social-media-post-generator' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Social Media Post Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Create engaging social media posts for various platforms.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="social-media-topic" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Topic for Post
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="social-media-topic"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                        placeholder="e.g., 'new product launch, summer sale, motivational quote'"
+                                        value={socialMediaPostTopic}
+                                        onChange={(e) => setSocialMediaPostTopic(e.target.value)}
+                                    />
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateSocialMediaPost}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate Post'}
+                                </button>
+                                {generatedSocialMediaPost && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Social Media Post</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedSocialMediaPost}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'ai-image-art' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">AI Image Art Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Describe the image you want to create, and AI will generate it for you.
+                                </p>
+                                {!arePublicFeaturesUnlocked && (
+                                    <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Feature Locked!</strong>
+                                        <span className="block sm:inline ml-2">This feature is currently locked. Please ask the administrator (Alivai) to unlock it via the Settings section.</span>
+                                    </div>
+                                )}
+                                <div className={`${!arePublicFeaturesUnlocked ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="mb-6">
+                                        <label htmlFor="image-prompt" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Image Description
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="image-prompt"
+                                            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                            placeholder="e.g., 'A futuristic city at sunset, neon lights, flying cars, cyberpunk style'"
+                                            value={imagePrompt}
+                                            onChange={(e) => setImagePrompt(e.target.value)}
+                                        />
+                                    </div>
+                                    {error && (
+                                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                            <strong className="font-bold">Error!</strong>
+                                            <span className="block sm:inline ml-2">{error}</span>
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={handleGenerateImage}
+                                        className={`w-full md:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isGeneratingImage ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                        disabled={isGeneratingImage || !arePublicFeaturesUnlocked}
+                                    >
+                                        {isGeneratingImage ? (
+                                            <span className="flex items-center justify-center">
+                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Generating Image...
+                                            </span>
+                                        ) : (
+                                            'Generate Image'
+                                        )}
+                                    </button>
+                                </div>
+                                {generatedImageUrl && arePublicFeaturesUnlocked && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8 flex flex-col items-center">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Image</h2>
+                                        <img src={generatedImageUrl} alt="AI Generated Art" className="max-w-full h-auto rounded-lg shadow-lg" />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'seo-query-generator' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">SEO Query Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Enter a target keyword to generate relevant SEO questions and queries.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="seo-keyword" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Target Keyword
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="seo-keyword"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                        placeholder="e.g., 'sustainable living' or 'best coffee makers'"
+                                        value={seoKeyword}
+                                        onChange={(e) => setSeoKeyword(e.target.value)}
+                                    />
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateSeoQueries}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate SEO Queries'}
+                                </button>
+                                {generatedSeoQueries && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated SEO Queries</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedSeoQueries}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'seo-dashboard' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-6 text-indigo-800">SEO Dashboard</h2>
+                                <p className="text-gray-600 mb-8">
+                                    Unlock advanced SEO insights and tools for better content optimization.
+                                </p>
+                                {!arePublicFeaturesUnlocked && (
+                                    <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Feature Locked!</strong>
+                                        <span className="block sm:inline ml-2">This feature is currently locked. Please ask the administrator (Alivai) to unlock it via the Settings section.</span>
+                                    </div>
+                                )}
+                                <div className={`${!arePublicFeaturesUnlocked ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="mb-10 p-6 border border-gray-200 rounded-lg shadow-sm">
+                                        <h3 className="text-2xl font-bold text-gray-900 mb-4">Keyword Ideas</h3>
+                                        <p className="text-gray-600 mb-4">
+                                            Enter a seed keyword to get a list of related long-tail, short-tail, and LSI keywords.
+                                        </p>
+                                        <div className="mb-4">
+                                            <label htmlFor="keyword-idea-seed" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Seed Keyword
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="keyword-idea-seed"
+                                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                                placeholder="e.g., 'vegan recipes' or 'digital marketing tips'"
+                                                value={keywordIdeaSeed}
+                                                onChange={(e) => setKeywordIdeaSeed(e.target.value)}
+                                            />
+                                        </div>
+                                        {error && (
+                                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                                <strong className="font-bold">Error!</strong>
+                                                <span className="block sm:inline ml-2">{error}</span>
+                                            </div>
+                                        )}
+                                        <button
+                                            onClick={handleGenerateKeywordIdeas}
+                                            className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                            disabled={isLoading || !arePublicFeaturesUnlocked}
+                                        >
+                                            {isLoading ? renderLoadingSpinner() : 'Generate Keyword Ideas'}
+                                        </button>
+                                        {generatedKeywordIdeas && (
+                                            <div className="bg-gray-50 p-6 rounded-lg mt-6 border border-gray-100">
+                                                <h4 className="text-xl font-bold text-gray-800 mb-3">Generated Keyword Ideas:</h4>
+                                                <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                                    {generatedKeywordIdeas}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="p-6 border border-gray-200 rounded-lg shadow-sm">
+                                        <h3 className="text-2xl font-bold text-gray-900 mb-4">Content Outline Generator</h3>
+                                        <p className="text-gray-600 mb-4">
+                                            Get a structured outline for your content based on a target topic.
+                                        </p>
+                                        <div className="mb-4">
+                                            <label htmlFor="outline-topic" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Topic for Outline
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="outline-topic"
+                                                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                                placeholder="e.g., 'The Benefits of Mindfulness Meditation' or 'Guide to Choosing a Laptop'"
+                                                value={outlineTopic}
+                                                onChange={(e) => setOutlineTopic(e.target.value)}
+                                            />
+                                        </div>
+                                        {error && (
+                                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                                <strong className="font-bold">Error!</strong>
+                                                <span className="block sm:inline ml-2">{error}</span>
+                                            </div>
+                                        )}
+                                        <button
+                                            onClick={handleGenerateContentOutline}
+                                            className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                            disabled={isLoading || !arePublicFeaturesUnlocked}
+                                        >
+                                            {isLoading ? renderLoadingSpinner() : 'Generate Content Outline'}
+                                        </button>
+                                        {generatedContentOutline && (
+                                            <div className="bg-gray-50 p-6 rounded-lg mt-6 border border-gray-100">
+                                                <h4 className="text-xl font-bold text-gray-800 mb-3">Generated Content Outline:</h4>
+                                                <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                                    {generatedContentOutline}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentPage === 'seo-meta-description' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">SEO Meta Description Generator</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Craft concise and effective meta descriptions to improve search visibility.
+                                </p>
+                                <div className="mb-6">
+                                    <label htmlFor="meta-description-topic" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Topic or Content Summary
+                                    </label>
+                                    <textarea
+                                        id="meta-description-topic"
+                                        className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200 resize-y min-h-[100px]"
+                                        rows="4"
+                                        placeholder="e.g., 'Blog post about the future of remote work and its impact on company culture.'"
+                                        value={metaDescriptionTopic}
+                                        onChange={(e) => setMetaDescriptionTopic(e.target.value)}
+                                    ></textarea>
+                                </div>
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Error!</strong>
+                                        <span className="block sm:inline ml-2">{error}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleGenerateMetaDescription}
+                                    className={`w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? renderLoadingSpinner() : 'Generate Meta Description'}
+                                </button>
+                                {generatedMetaDescription && (
+                                    <div className="bg-white p-8 rounded-lg shadow-xl mt-8">
+                                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Generated Meta Description</h2>
+                                        <div className="prose max-w-none break-words whitespace-pre-wrap">
+                                            {generatedMetaDescription}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentPage === 'about' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">About Alivai AI</h2>
+                                <p className="text-gray-600 mb-4">
+                                    Welcome to Alivai AI, your comprehensive toolkit for all things content and SEO! This application leverages the power of advanced artificial intelligence to help you generate high-quality text, brainstorm ideas, optimize for search engines, and even create stunning images from simple descriptions.
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                    Our mission is to simplify content creation and boost your online presence, whether you're a blogger, marketer, student, or business owner. Explore our various tools, from generating full articles and blog post ideas to crafting perfect product descriptions and essential SEO elements like meta descriptions.
+                                </p>
+                                <p className="text-gray-600">
+                                    We are constantly working to expand our features and improve your experience. Thank you for choosing Alivai AI!
+                                </p>
+                            </div>
+                        )}
+
+                        {currentPage === 'about-me-section' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">About Me (The Creator)</h2>
+                                <p className="text-gray-600 mb-4">
+                                    Hello! I'm Alivai, the developer and **complete owner and principal admin of Alivai AI**. I am passionately dedicated to making powerful AI tools accessible to everyone, completely free of charge, for use worldwide in both official and commercial capacities.
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                    I firmly believe in empowering creators and businesses by removing barriers to advanced AI. Alivai AI is built on principles of openness, user privacy, and ensuring that all decision-making power rests with me. **No one else has any decision-making authority or ownership claim over this platform, now or in the future**, ensuring its consistent direction and integrity.
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                    Connect with me on Facebook: <a href="https://www.facebook.com/alivai2024/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">https://www.facebook.com/alivai2024/</a>
+                                </p>
+                                <p className="text-gray-600">
+                                    I'm continually striving to improve and expand this platform based on user feedback and the latest advancements in Alivai AI technology. Thank you for joining me on this journey to simplify content and elevate your online presence!
+                                </p>
+                            </div>
+                        )}
+
+                        {currentPage === 'disclaimer-policy' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Disclaimer Policy</h2>
+                                <p className="text-gray-600 mb-4">
+                                    The content generated by Alivai AI's tools is produced by artificial intelligence models. While we strive to provide high-quality and relevant outputs, the accuracy, completeness, or reliability of the generated content cannot be guaranteed.
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                    Users are solely responsible for reviewing, verifying, and editing any content generated by Alivai AI before its use for any purpose, commercial or otherwise. Alivai AI shall not be held liable for any direct, indirect, incidental, special, or consequential damages arising out of the use or inability to use the generated content.
+                                </p>
+                                <p className="text-gray-600">
+                                    The use of this platform implies your acceptance of this disclaimer.
+                                </p>
+                            </div>
+                        )}
+
+                        {currentPage === 'privacy-policy' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Privacy Policy</h2>
+                                <p className="text-gray-600 mb-4 font-bold text-indigo-700">
+                                    At Alivai AI, your privacy is paramount. We want to be unequivocally clear:
+                                </p>
+                                <ul className="list-disc list-inside text-gray-600 mb-4 ml-4">
+                                    <li>We **DO NOT** collect, store, or sell any personal data from our users.</li>
+                                    <li>We **DO NOT** store your input prompts or the generated content on our servers.</li>
+                                    <li>We **DO NOT** use your data for training our models or for any other commercial purpose.</li>
+                                    <li>Your interactions with our AI tools are ephemeral and processed in real-time without persistent storage on our end.</li>
+                                </ul>
+                                <p className="text-gray-600 mb-4">
+                                    Our platform utilizes external AI models (e.g., Gemini API for text, Imagen API for images) to process your requests. These API calls are made directly from your browser to the respective service, and Alivai AI acts as an intermediary interface. We do not intercept, log, or retain any content passed through these APIs.
+                                </p>
+                                <p className="text-gray-600">
+                                    This policy is designed to ensure maximum user privacy and trust. By using Alivai AI, you acknowledge and agree to this transparent approach to data handling.
+                                </p>
+                            </div>
+                        )}
+
+                        {currentPage === 'cookies-policy' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Cookies Policy</h2>
+                                <p className="text-gray-600 mb-4">
+                                    Alivai AI uses a minimal number of cookies, strictly for functional purposes to ensure the proper operation and user experience of our website.
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                    These may include:
+                                </p>
+                                <ul className="list-disc list-inside text-gray-600 mb-4 ml-4">
+                                    <li>**Session Cookies:** Essential for navigating the website and using its features. They are temporary and are erased when you close your browser.</li>
+                                    <li>**Preference Cookies:** Used to remember your selected preferences, such as your chosen language settings, so you don't have to re-select them on every visit.</li>
+                                </ul>
+                                <p className="text-gray-600 mb-4 font-bold text-red-700">
+                                    We **DO NOT** use cookies for:
+                                </p>
+                                <ul className="list-disc list-inside text-gray-600 mb-4 ml-4">
+                                    <li>Tracking your activity across other websites.</li>
+                                    <li>Collecting personal data for advertising or marketing purposes.</li>
+                                    <li>Sharing data with third-party advertisers.</li>
+                                </ul>
+                                <p className="text-gray-600">
+                                    By continuing to use Alivai AI, you consent to the use of these essential functional cookies. You can manage or disable cookies through your browser settings, but please note that some features of the website may not function correctly without them.
+                                </p>
+                            </div>
+                        )}
+
+                        {currentPage === 'copyright-policy' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Copyright & Fair Use Policy</h2>
+                                <p className="text-gray-600 mb-4">
+                                    **User-Generated Content:** All content generated by users through the Alivai AI platform is considered the property of the respective user. Alivai AI makes no claim to copyright over the text, images, or any other output generated by you using our tools. You are free to use the generated content for any purpose, official or commercial, at your discretion.
+                                </p>
+                                <p className="text-gray-600 mb-4">
+                                    **Alivai AI Platform Copyright:** The Alivai AI website, its code, design, logos, and proprietary features are the **exclusive copyright of Alivai**. Unauthorized reproduction, distribution, or modification of the platform itself is prohibited.
+                                </p>
+                                <p className="text-gray-600 mb-4 font-bold text-indigo-700">
+                                    Crucially, Alivai AI **DOES NOT** store, retain, or claim ownership of any data you input or generate. Your creative work remains entirely yours. Alivai is the sole owner and has **all decision-making power** regarding Alivai AI; no other individual or entity has any claim or authority over the platform, now or in the future. This policy reinforces our commitment to user privacy and intellectual property rights, as well as the clear ownership structure.
+                                </p>
+                                <p className="text-gray-600">
+                                    This policy is in accordance with standard fair use principles and the transparent operation of our AI services.
+                                </p>
+                            </div>
+                        )}
+
+                        {currentPage === 'faq-section' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Frequently Asked Questions (FAQ)</h2>
+
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Q1: Is Alivai AI truly free to use?</h3>
+                                    <p className="text-gray-600">
+                                        A: Yes, Alivai AI is completely free for all users worldwide. There are no hidden costs, subscriptions, or paywalls for any of the available tools.
+                                    </p>
+                                </div>
+
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Q2: Can I use the generated content for commercial purposes?</h3>
+                                    <p className="text-gray-600">
+                                        A: Absolutely! All content generated by Alivai AI can be used for any official or commercial working purpose. You retain full ownership and copyright of the output.
+                                    </p>
+                                </div>
+
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Q3: Do you store my data or prompts?</h3>
+                                    <p className className="text-gray-600 font-bold text-red-700">
+                                        A: No, we do not. Alivai AI has a strict no-data-storage policy. Your input prompts and the generated content are not collected, stored, or sold by us. Your privacy is our top priority.
+                                    </p>
+                                </div>
+
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Q4: How accurate is the AI-generated content?</h3>
+                                    <p className="text-gray-600">
+                                        A: While our AI models are advanced, the content generated is based on patterns and data they were trained on. It's always recommended to review, fact-check, and edit the output to ensure accuracy and alignment with your specific needs.
+                                    </p>
+                                </div>
+
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Q5: How can I provide feedback or suggest new features?</h3>
+                                    <p className="text-gray-600">
+                                        A: We'd love to hear from you! Please navigate to the "Feedback" section in the sidebar to submit your suggestions, report issues, or share your experience. Your feedback helps us improve Alivai AI.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentPage === 'feedback' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Provide Feedback</h2>
+                                <p className="text-gray-600 mb-6">
+                                    We value your input! Please let us know your thoughts, suggestions, or any issues you encounter.
+                                </p>
+                                <form onSubmit={handleSubmitFeedback}>
+                                    <div className="mb-6">
+                                        <label htmlFor="feedback-text" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Your Feedback
+                                        </label>
+                                        <textarea
+                                            id="feedback-text"
+                                            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200 resize-y min-h-[150px]"
+                                            rows="6"
+                                            placeholder="e.g., 'The image generator is amazing! Could you add a feature to save prompts?'"
+                                            value={feedbackText}
+                                            onChange={(e) => setFeedbackText(e.target.value)}
+                                        ></textarea>
+                                    </div>
+                                    {feedbackMessage && (
+                                        <div className={`px-4 py-3 rounded-lg relative mb-6 ${feedbackMessage.includes('Thank you') ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'}`} role="alert">
+                                            <span className="block sm:inline">{feedbackMessage}</span>
+                                        </div>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        className="w-full md:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-300 transform hover:scale-105"
+                                    >
+                                        Submit Feedback
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {currentPage === 'settings' && (
+                            <div className="bg-white p-8 rounded-lg shadow-xl mb-8">
+                                <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Settings</h2>
+                                <p className="text-gray-600 mb-6">
+                                    Adjust your application preferences here.
+                                </p>
+                                {!isAdminMode && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                                        <strong className="font-bold">Access Denied!</strong>
+                                        <span className="block sm:inline ml-2">You need administrator privileges (Alivai) to access the settings. Please activate Admin Mode from the Home Dashboard.</span>
+                                    </div>
+                                )}
+                                {isAdminMode && (
+                                    <>
+                                        <div className="mb-6">
+                                            <label htmlFor="language-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Change Language
+                                            </label>
+                                            <select
+                                                id="language-select"
+                                                className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
+                                                value={selectedLanguage}
+                                                onChange={(e) => setSelectedLanguage(e.target.value)}
+                                            >
+                                                <option value="en">English</option>
+                                                <option value="es">Español</option>
+                                                <option value="fr">Français</option>
+                                                <option value="de">Deutsch</option>
+                                            </select>
+                                            <p className="text-sm text-gray-500 mt-2">
+                                                (Note: This is a placeholder for language selection. Actual content translation is not implemented.)
+                                            </p>
+                                        </div>
+
+                                        <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+                                            <h3 className="text-xl font-semibold text-blue-800 mb-3">Public Feature Control</h3>
+                                            <p className="text-gray-700 mb-4">
+                                                Toggle to unlock or lock certain features for all users on Alivai AI.
+                                            </p>
+                                            <button
+                                                onClick={() => setArePublicFeaturesUnlocked(!arePublicFeaturesUnlocked)}
+                                                className={`px-6 py-3 font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-300 transform hover:scale-105 ${arePublicFeaturesUnlocked ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500 text-white'}`}
+                                            >
+                                                {arePublicFeaturesUnlocked ? 'Lock Public Features' : 'Unlock Public Features'}
+                                            </button>
+                                            <p className="text-sm text-gray-600 mt-2">
+                                                Current status: <span className={`font-bold ${arePublicFeaturesUnlocked ? 'text-green-700' : 'text-red-700'}`}>{arePublicFeaturesUnlocked ? 'Unlocked' : 'Locked'}</span>
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
